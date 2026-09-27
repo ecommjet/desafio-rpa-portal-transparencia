@@ -1,6 +1,8 @@
 # Publicar a API para avaliação
 
-O requisito do bônus inclui uma API online. **Ainda não há deploy realizado.** O destino escolhido é sua **VPS com n8n self-hosted**. Os arquivos abaixo preparam uma implantação única com estado persistente; o proxy/domínio precisa ser adaptado à configuração existente da VPS.
+O requisito do bônus inclui uma API online. O deploy está ativo em **[portfolio.ecommjet.com.br](https://portfolio.ecommjet.com.br)**, via Docker/Easypanel na mesma VPS do n8n self-hosted.
+
+O serviço `portfolio_observa_api` roda isolado, com `REQUIRE_API_KEY=true`, `MAX_CONCURRENT=1`, volume persistente e health check. O Caddy já existente na VPS termina o HTTPS e encaminha somente esse domínio ao container na rede `easypanel`; as rotas do n8n e da Evolution API não foram alteradas. `/health`, `/docs` e a resposta 401 de uma consulta sem chave foram verificados externamente.
 
 ## VPS com n8n self-hosted (destino escolhido)
 
@@ -40,17 +42,18 @@ O disco desse plano não é persistente. Para maior confiabilidade, use armazena
 
 `docker compose up --build` publica a API em localhost e persiste checkpoints em um volume. Para o Google, configure os IDs e `GOOGLE_TOKEN_JSON` como variáveis protegidas no servidor. Use um proxy HTTPS para acesso externo, com `API_KEY` forte e `REQUIRE_API_KEY=true`. Não exponha o n8n ou o token Google sem autenticação.
 
-O container executa com usuário sem privilégios. O Dockerfile instala Chromium e suas bibliotecas Linux. Neste computador o daemon Docker estava desligado, então o build ainda não foi executado.
+O container executa com usuário sem privilégios. O Dockerfile instala Chromium e suas bibliotecas Linux. O build e a execução foram validados na VPS.
 
 ## Checklist de aceite online
 
-- [ ] `/health` responde e `/docs` carrega por HTTPS.
-- [ ] POST sem chave recebe 401.
+- [x] `/health` responde e `/docs` carrega por HTTPS.
+- [x] POST sem chave recebe 401.
 - [ ] Consulta real autorizada produz panorama, benefícios e evidência verificáveis.
-- [ ] Bloqueio do portal é reportado como erro, com diagnóstico.
+- [x] Bloqueio do portal é reportado como erro, com diagnóstico.
 - [ ] Duas consultas simultâneas têm UUIDs/resultados independentes (ajustar recursos e concorrência).
-- [ ] n8n executa a consulta e recebe os links do Google.
+- [x] n8n executa a consulta autenticada e recebe o JSON do robô.
+- [ ] n8n recebe os links do Google após a autorização OAuth.
 - [ ] JSON no Drive contém a imagem e os mesmos dados retornados pela API.
 - [ ] Reenviar o mesmo JSON não duplica o arquivo ou a linha.
 
-Não compartilhe a API com os avaliadores como funcionalmente homologada até concluir esses passos, especialmente o acesso ao portal real.
+A API já pode ser apresentada para avaliação do contrato e do tratamento de erros. Uma coleta headless bem-sucedida no portal e o arquivamento Google real dependem, respectivamente, da liberação do WAF e da autorização OAuth.

@@ -2,7 +2,7 @@
 
 O workflow n8n chama o robô por HTTP e entrega seu resultado ao exportador Python. O exportador usa OAuth 2.0 e as APIs oficiais para criar o JSON no Drive e atualizar o registro no Sheets. A autenticação Google fica no servidor; o n8n guarda somente a credencial da API.
 
-O código e os testes estão implementados. **A conexão a uma conta Google, a execução no seu n8n e o deploy online ainda precisam ser feitos.** Nenhuma credencial foi criada ou enviada automaticamente.
+O código e os testes estão implementados. A API está online e o workflow foi importado e executado no n8n com autenticação. **Ainda falta autorizar uma conta Google** para validar o upload real no Drive e a atualização do Sheets. Nenhuma credencial Google é versionada.
 
 ## 1. Autorizar sua conta Google uma vez
 
@@ -68,6 +68,7 @@ Fluxo: **Executar consulta → Entrada → Consultar RPA → Validar resultado �
 | Docker no macOS/Windows, API no host | `http://host.docker.internal:8000` |
 | Mesma rede Docker da API | `http://api:8000` |
 | n8n remoto/cloud | URL HTTPS pública do deploy |
+| Instância deste projeto | `https://portfolio.ecommjet.com.br` |
 
 Se o n8n estiver em Docker e precisar acessar o host, inicie a API com `--host 0.0.0.0` e `REQUIRE_API_KEY=true`. Isso também pode disponibilizar a porta na sua rede local; use somente durante o teste ou controle o acesso pelo firewall. Em Linux, `host.docker.internal` pode exigir configuração `host-gateway` no Docker.
 
@@ -75,7 +76,7 @@ Não use `localhost` de um servidor n8n remoto esperando alcançar seu Mac. O b�
 
 O primeiro HTTP aceita respostas HTTP de erro para preservar diagnósticos do RPA. O nó seguinte rejeita respostas sem um resultado válido, como chave incorreta. Só a etapa de arquivamento tem retries automáticos, sempre com o mesmo JSON. Referência das opções: [HTTP Request do n8n](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.httprequest/).
 
-O JSON do workflow e seus scripts foram verificados localmente, mas ainda não importados/executados na sua instância. Se houver diferença entre versões do n8n, confira os nós HTTP conforme a tabela e mantenha o corpo JSON, Header Auth e os timeouts de 180/300 segundos.
+O JSON do workflow e seus scripts foram verificados localmente. O workflow também foi importado na instância self-hosted e a consulta autenticada à API pública foi executada; o retorno `PORTAL_BLOQUEADO` confirmou o tratamento esperado do WAF. A etapa Google aguarda OAuth. Se houver diferença entre versões do n8n, confira os nós HTTP conforme a tabela e mantenha o corpo JSON, Header Auth e os timeouts de 180/300 segundos.
 
 ## 4. Executar ou retomar pelo terminal
 

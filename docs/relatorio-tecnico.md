@@ -2,7 +2,7 @@
 
 ## Escopo
 
-Implementação da Parte 1, API documentada, interface web e código do bônus Google/n8n. A homologação real da coleta, a autorização Google, a execução na instância n8n e o deploy online permanecem pendentes. Nenhum envio de e-mail ou publicação de repositório foi realizado.
+Implementação da Parte 1, API documentada, interface web e código do bônus Google/n8n. A API está publicada por HTTPS na VPS, o repositório é público e a chamada autenticada foi validada no n8n self-hosted. Permanecem pendentes a autorização Google e uma coleta autônoma bem-sucedida em ambiente liberado pelo WAF.
 
 ## Decisões
 
@@ -38,9 +38,10 @@ O layout e os componentes do portal podem mudar. A extração de campos e links 
 - Execução real da CLI com nome fictício: código de saída 2, JSON com `status=erro` e `codigo=TEMPO_ESGOTADO`, sem pessoa ou evidência. O arquivo local está em `outputs/verificacao-portal.json`, excluído do versionamento.
 - O diagnóstico posterior do Chromium encontrou HTTP 202, título/corpo vazios e `#challenge-container` com scripts AWS WAF. A detecção agora inclui esse DOM; uma espera curta permite que a verificação automática normal termine, sem resolver CAPTCHA ou injetar tokens.
 - Após a correção, a CLI real retornou `PORTAL_BLOQUEADO` em 1.490 ms, com captura de diagnóstico e sem dados de pessoa. Resultado local: `outputs/verificacao-portal-atual.json`.
-- O workflow n8n passou na verificação local de estrutura/scripts; não foi importado na instância do usuário. O destino de hospedagem escolhido é a VPS existente com n8n self-hosted; proxy/domínio e acesso ainda precisam ser configurados.
+- A imagem Docker está em execução na VPS via Easypanel. `https://portfolio.ecommjet.com.br/health` responde, o Swagger está publicado e requisições sem chave aos endpoints protegidos recebem 401.
+- O workflow n8n passou na verificação local, foi importado na instância self-hosted e chamou a API pública com Header Auth. O teste retornou `PORTAL_BLOQUEADO` com captura de diagnóstico, comportamento esperado diante do WAF.
 - A consulta real assistida encontrou o panorama e os detalhes de Auxílio Emergencial. A extração offline das capturas gerou `outputs/resultado-assistido.json`, com nove registros de uma tabela e imagem do panorama. O arquivo declara modo assistido e resultado parcial, pois o utilitário não verifica a completude da paginação. Os dados pessoais não integram os testes sintéticos nem a documentação versionada.
-- Docker e coleta real autônoma bem-sucedida não foram validados.
+- O arquivamento real no Google aguarda a autorização OAuth da conta. A coleta real autônoma bem-sucedida segue limitada pelo WAF do portal.
 
 ### Sequência sugerida
 

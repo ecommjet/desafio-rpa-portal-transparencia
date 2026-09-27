@@ -20,9 +20,11 @@ Solução para o [desafio 01 da mostQI](https://github.com/mostqi/desafios-fulls
 - Workflow n8n importável e workflow CLI com checkpoint.
 - Configuração Docker, Render e CI GitHub Actions.
 
-**Pendências externas:** autorizar a conta Google, importar/rodar o workflow na sua instância n8n, publicar a API e homologar a consulta real. Docker, Render e CI remoto ainda não foram executados. A integração Google foi testada com serviços simulados.
+**Online:** a API está publicada em [portfolio.ecommjet.com.br](https://portfolio.ecommjet.com.br), protegida por chave e executando em Docker/Easypanel na VPS. O workflow foi importado no n8n self-hosted e a chamada autenticada foi validada. Resta autorizar a conta Google para testar o arquivamento real no Drive/Sheets. A integração Google já é coberta por testes com serviços simulados.
 
 ## Testar agora neste projeto
+
+Produção: [interface](https://portfolio.ecommjet.com.br), [Swagger](https://portfolio.ecommjet.com.br/docs) e [health check](https://portfolio.ecommjet.com.br/health). Os endpoints de consulta e arquivamento exigem `X-API-Key`; a chave está configurada de forma privada no servidor e na credencial Header Auth do n8n.
 
 O ambiente e o Chromium já foram instalados nesta pasta:
 
@@ -32,7 +34,7 @@ bash scripts/start.sh
 
 Abra **[a interface](http://127.0.0.1:8000)**. Informe nome/CPF/NIS e clique em **Consultar portal**. O resultado permite baixar JSON, abrir a captura e, após conectar o Google, salvar no Drive/Sheets. `PORTAL_BLOQUEADO` indica impedimento do portal, não falha de instalação.
 
-Para configurar o bônus, siga **[Google + n8n](docs/bonus-google.md)**. Importe **[workflows/n8n-consulta-google.json](workflows/n8n-consulta-google.json)** no n8n. Para publicar a API, veja **[deploy](docs/deploy.md)**.
+Para concluir a autorização do bônus ou importar uma nova cópia do workflow, siga **[Google + n8n](docs/bonus-google.md)**. O artefato está em **[workflows/n8n-consulta-google.json](workflows/n8n-consulta-google.json)**. Os detalhes da publicação estão em **[deploy](docs/deploy.md)**.
 
 ## Executar localmente
 
@@ -59,7 +61,7 @@ curl -X POST http://127.0.0.1:8000/consultas \
   -d '{"termo":"NOME PARA CONSULTA","beneficiario_programa_social":true}'
 ```
 
-Se `API_KEY` estiver configurada, envie `X-API-Key` ou use o botão **Authorize** no Swagger. Por padrão a API deve permanecer em localhost. Antes de um eventual deploy público, configure a chave, HTTPS, controle de acesso e limites no proxy. O limite de concorrência é por processo; múltiplos workers multiplicam a quantidade de navegadores.
+Se `API_KEY` estiver configurada, envie `X-API-Key` ou use o botão **Authorize** no Swagger. A implantação pública usa HTTPS, chave obrigatória e concorrência 1. O limite de concorrência é por processo; múltiplos workers multiplicam a quantidade de navegadores.
 
 ### Linha de comando
 
@@ -75,7 +77,7 @@ O comando também fica disponível como `transparencia` após `pip install -e .`
 docker compose up --build
 ```
 
-A porta é publicada apenas em `127.0.0.1`. Não é necessário instalar Python ou Chromium no host. O build necessita de acesso à internet. Esta forma de execução é fornecida como configuração, ainda sem validação local.
+A porta é publicada apenas em `127.0.0.1`. Não é necessário instalar Python ou Chromium no host. O build necessita de acesso à internet. A imagem Docker foi validada na implantação da VPS.
 
 ## Contrato do resultado
 

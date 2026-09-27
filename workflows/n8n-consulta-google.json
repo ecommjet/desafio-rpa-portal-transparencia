@@ -29,7 +29,7 @@
       "typeVersion": 2,
       "position": [220, 140],
       "parameters": {
-        "jsCode": "return [{ json: { api_url: 'http://host.docker.internal:8000', termo: 'TESTE INEXISTENTE MOSTQI XYZ', beneficiario_programa_social: false } }];"
+        "jsCode": "return [{ json: { api_url: 'https://portfolio.ecommjet.com.br', termo: 'TESTE INEXISTENTE MOSTQI XYZ', beneficiario_programa_social: false } }];"
       }
     },
     {
@@ -40,7 +40,7 @@
       "position": [440, 140],
       "parameters": {
         "method": "POST",
-        "url": "={{ $json.api_url.replace(/\/$/, '') + '/consultas' }}",
+        "url": "={{ $json.api_url }}/consultas",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
@@ -74,7 +74,7 @@
       "waitBetweenTries": 5000,
       "parameters": {
         "method": "POST",
-        "url": "={{ $('Entrada').first().json.api_url.replace(/\/$/, '') + '/integracoes/google/arquivar' }}",
+        "url": "={{ $node[\"Entrada\"].json.api_url }}/integracoes/google/arquivar",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,

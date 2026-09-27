@@ -13,6 +13,7 @@ const run = (name, input, reference) => new Function('$input', '$', nodes.get(na
 );
 const input = run('Entrada')[0].json;
 assert(input.api_url.startsWith('http'));
+assert.equal(input.api_url, 'https://portfolio.ecommjet.com.br');
 assert.equal(typeof input.beneficiario_programa_social, 'boolean');
 const result = {consulta_id: 'example-id', consultado_em: new Date().toISOString(), status: 'erro', codigo: 'PORTAL_BLOQUEADO'};
 assert.deepEqual(run('Validar resultado', result)[0].json, result);
@@ -26,4 +27,4 @@ for (const node of workflow.nodes.filter(n => n.type === 'n8n-nodes-base.httpReq
 }
 assert.equal(nodes.get('Consultar RPA').retryOnFail, undefined);
 assert.equal(nodes.get('Arquivar no Drive e Sheets').retryOnFail, true);
-console.log('Workflow: estrutura, scripts, separação de status e credenciais verificados. Importação no n8n ainda necessária.');
+console.log('Workflow: estrutura, scripts, separação de status e credenciais verificados.');
