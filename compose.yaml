@@ -1,0 +1,19 @@
+services:
+  api:
+    build: .
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      HEADLESS: "true"
+      MAX_CONCURRENT: "3"
+      API_KEY: "${API_KEY:-}"
+      GOOGLE_TOKEN_JSON: "${GOOGLE_TOKEN_JSON:-}"
+      GOOGLE_DRIVE_FOLDER_ID: "${GOOGLE_DRIVE_FOLDER_ID:-}"
+      GOOGLE_SPREADSHEET_ID: "${GOOGLE_SPREADSHEET_ID:-}"
+    volumes:
+      - export-state:/app/outputs
+    shm_size: 1gb
+    init: true
+
+volumes:
+  export-state:

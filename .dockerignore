@@ -1,0 +1,11 @@
+.venv
+.browsers
+.git
+.env
+outputs
+__pycache__
+.pytest_cache
+dist
+*.egg-info
+secrets
+tests

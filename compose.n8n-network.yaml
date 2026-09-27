@@ -1,0 +1,12 @@
+# Override opcional: use somente se o n8n estiver na mesma VPS/rede Docker.
+services:
+  api:
+    networks:
+      default:
+      n8n:
+        aliases:
+          - observa-api
+networks:
+  n8n:
+    external: true
+    name: "${N8N_DOCKER_NETWORK:?Informe o nome real da rede Docker do n8n}"

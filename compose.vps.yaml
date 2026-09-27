@@ -1,0 +1,35 @@
+# Implantação em uma única instância, atrás do proxy HTTPS existente.
+name: observa
+services:
+  api:
+    build: .
+    restart: unless-stopped
+    init: true
+    ports:
+      - "127.0.0.1:${OBSERVA_HOST_PORT:-8001}:8000"
+    environment:
+      HEADLESS: "true"
+      REQUIRE_API_KEY: "true"
+      API_KEY: "${API_KEY:?Defina API_KEY no arquivo de ambiente da VPS}"
+      MAX_CONCURRENT: "${MAX_CONCURRENT:-2}"
+      QUERY_TIMEOUT_SECONDS: "120"
+      GOOGLE_TOKEN_JSON: "${GOOGLE_TOKEN_JSON:-}"
+      GOOGLE_DRIVE_FOLDER_ID: "${GOOGLE_DRIVE_FOLDER_ID:-}"
+      GOOGLE_SPREADSHEET_ID: "${GOOGLE_SPREADSHEET_ID:-}"
+      EXPORT_STATE_DIR: /app/outputs/export-state
+    volumes:
+      - export-state:/app/outputs
+    shm_size: 1gb
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+volumes:
+  export-state:

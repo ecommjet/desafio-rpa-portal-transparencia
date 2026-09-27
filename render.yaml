@@ -1,0 +1,25 @@
+# Configuração inicial gratuita; não foi realizado deploy.
+# Configure GOOGLE_TOKEN_JSON/IDs no painel após o OAuth local.
+services:
+  - type: web
+    name: observa-rpa
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: "8000"
+      - key: REQUIRE_API_KEY
+        value: "true"
+      - key: API_KEY
+        generateValue: true
+      - key: HEADLESS
+        value: "true"
+      - key: MAX_CONCURRENT
+        value: "1"
+      - key: GOOGLE_TOKEN_JSON
+        sync: false
+      - key: GOOGLE_DRIVE_FOLDER_ID
+        sync: false
+      - key: GOOGLE_SPREADSHEET_ID
+        sync: false

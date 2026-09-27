@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Observa · Consulta de transparência</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+<header><a class="brand" href="/">◉ <span>observa</span></a><span class="header-note">Portal da Transparência · RPA</span><a href="/docs">API / Swagger ↗</a></header>
+<main>
+  <section class="intro"><p class="eyebrow">DADOS PÚBLICOS, COM EVIDÊNCIA</p><h1>Uma consulta.<br>Todo o panorama.</h1><p>Consulte pessoas físicas, acompanhe os benefícios e exporte os dados com a captura da fonte.</p></section>
+  <div class="workspace">
+    <section class="card search-card">
+      <div class="section-title"><span class="step">01</span><h2>Nova consulta</h2></div>
+      <form id="query-form">
+        <label for="term">Nome, CPF ou NIS</label>
+        <input id="term" name="termo" placeholder="Digite um nome ou documento" required minlength="2" maxlength="160" autocomplete="off">
+        <p class="hint">Retorna a primeira pessoa física encontrada no portal.</p>
+        <label class="check"><input id="social" type="checkbox"><span>Apenas beneficiários de programa social</span></label>
+        <details class="access"><summary>Chave de acesso da API</summary><label for="api-key">X-API-Key</label><input id="api-key" type="password" placeholder="Preencha se a API exigir" autocomplete="off"><p class="hint">Usada apenas nesta página; não é salva no navegador.</p></details>
+        <button id="submit" type="submit">Consultar portal <span>↗</span></button>
+      </form>
+      <div class="note"><span class="dot"></span><p>Consulta à fonte oficial. Bloqueios e resultados incompletos são identificados na resposta.</p></div>
+    </section>
+    <section class="card results-card" aria-labelledby="result-title">
+      <div class="section-title"><span class="step">02</span><h2 id="result-title">Resultado da consulta</h2><span id="status" class="badge">Aguardando</span></div>
+      <div id="empty" class="empty"><span class="empty-icon">◎</span><h3>Seu próximo resultado aparece aqui</h3><p>Preencha a busca para visualizar a identificação,<br>os benefícios e a evidência da consulta.</p></div>
+      <p id="progress" role="status" aria-live="polite" hidden></p>
+      <div id="result" hidden>
+        <p id="message" role="status" aria-live="polite"></p>
+        <dl id="person"></dl>
+        <div id="benefits"></div>
+        <div id="evidence-wrap" hidden><h3 id="evidence-title">Evidência do panorama</h3><a id="evidence-link" target="_blank" rel="noopener"><img id="evidence" alt="Captura da página consultada no portal"></a></div>
+        <div class="result-actions"><button id="download" type="button" class="secondary">↓ Baixar JSON</button><button id="export" type="button" class="secondary">Salvar no Google ↗</button><span id="duration"></span></div>
+        <p id="export-status" role="status" aria-live="polite" hidden></p>
+        <details><summary>Informações da execução</summary><pre id="metadata"></pre></details>
+      </div>
+    </section>
+  </div>
+  <footer><span>Python + Playwright · Evidências rastreáveis</span><span>JSON / PNG / OpenAPI</span></footer>
+</main>
+</body></html>
