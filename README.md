@@ -1,8 +1,32 @@
-# Observa — RPA do Portal da Transparência
+# RPA do Portal da Transparência
 
-Solução para o [desafio 01 da mostQI](https://github.com/mostqi/desafios-fullstack-python/tree/main/desafio-01): robô Python + Playwright, API FastAPI/Swagger, interface web e bônus com **n8n + Google Drive + Sheets**.
+Solução para o [desafio 01 da mostQI](https://github.com/mostqi/desafios-fullstack-python/tree/main/desafio-01): robô Python + Playwright, API FastAPI/Swagger e bônus com **n8n + Google Drive + Sheets**.
+
+O robô abre o próprio [Portal da Transparência](https://portaldatransparencia.gov.br/), navega até a busca de pessoas, preenche os filtros, seleciona o primeiro resultado, coleta o panorama e os detalhes dos benefícios e gera um JSON com a captura da tela em Base64. A interface web chamada **Observa** é apenas um cliente opcional da API; ela não substitui nem simula o portal.
 
 **Estado da validação:** os testes de integração usam páginas sintéticas e navegador real. Uma sessão real assistida permitiu validar a navegação, o panorama, um benefício e a estrutura atual do portal. O acesso headless ainda recebe verificação humana (AWS WAF/CAPTCHA) nesta rede. O robô identifica o bloqueio e devolve erro explícito, sem contornar CAPTCHA nem inventar resultados. A coleta autônoma e os demais cenários ainda precisam de homologação em um ambiente no qual o portal libere a navegação.
+
+## Situação da entrega
+
+| Componente | Situação |
+|---|---|
+| RPA Python/Playwright | Implementado e coberto por testes |
+| Headless e consultas simultâneas | Implementados |
+| JSON, benefícios e screenshot Base64 | Implementados |
+| API FastAPI/OpenAPI | Online e protegida por chave |
+| Docker/Easypanel/HTTPS | Online na VPS |
+| Workflow n8n | Importado e chamada autenticada validada |
+| Google Drive + Sheets | Código e testes prontos; OAuth real ainda precisa ser autorizado |
+| Portal em produção | Acesso headless desta VPS recebe AWS WAF/CAPTCHA; o erro é detectado e documentado |
+
+Links públicos:
+
+- API: [portfolio.ecommjet.com.br](https://portfolio.ecommjet.com.br)
+- Swagger: [portfolio.ecommjet.com.br/docs](https://portfolio.ecommjet.com.br/docs)
+- Health check: [portfolio.ecommjet.com.br/health](https://portfolio.ecommjet.com.br/health)
+- Repositório: [github.com/ecommjet/desafio-rpa-portal-transparencia](https://github.com/ecommjet/desafio-rpa-portal-transparencia)
+
+Os endpoints protegidos exigem `X-API-Key`. A chave não fica no Git; ela deve ser enviada ao avaliador por um canal privado.
 
 ## Funcionalidades
 
@@ -15,26 +39,68 @@ Solução para o [desafio 01 da mostQI](https://github.com/mostqi/desafios-fulls
 - Prazo global incluindo fila, fechamento do contexto e erros estruturados.
 - API com OpenAPI, chave opcional e resposta sem cache.
 
-- Interface responsiva para consultar, visualizar captura, baixar JSON e exportar para o Google.
+- Interface opcional para consultar, visualizar captura, baixar JSON e exportar para o Google.
 - OAuth Google, upload com nome padronizado e registro no Sheets, com retomada e controle de duplicações.
 - Workflow n8n importável e workflow CLI com checkpoint.
 - Configuração Docker, Render e CI GitHub Actions.
 
-**Online:** a API está publicada em [portfolio.ecommjet.com.br](https://portfolio.ecommjet.com.br), protegida por chave e executando em Docker/Easypanel na VPS. O workflow foi importado no n8n self-hosted e a chamada autenticada foi validada. Resta autorizar a conta Google para testar o arquivamento real no Drive/Sheets. A integração Google já é coberta por testes com serviços simulados.
+## Teste rápido para o avaliador
 
-## Testar agora neste projeto
-
-Produção: [interface](https://portfolio.ecommjet.com.br), [Swagger](https://portfolio.ecommjet.com.br/docs) e [health check](https://portfolio.ecommjet.com.br/health). Os endpoints de consulta e arquivamento exigem `X-API-Key`; a chave está configurada de forma privada no servidor e na credencial Header Auth do n8n.
-
-O ambiente e o Chromium já foram instalados nesta pasta:
+### 1. Conferir a API online
 
 ```bash
-bash scripts/start.sh
+curl https://portfolio.ecommjet.com.br/health
 ```
 
-Abra **[a interface](http://127.0.0.1:8000)**. Informe nome/CPF/NIS e clique em **Consultar portal**. O resultado permite baixar JSON, abrir a captura e, após conectar o Google, salvar no Drive/Sheets. `PORTAL_BLOQUEADO` indica impedimento do portal, não falha de instalação.
+Resposta esperada: `{"status":"ok"}`. Para executar uma consulta, use a chave recebida de forma privada:
 
-Para concluir a autorização do bônus ou importar uma nova cópia do workflow, siga **[Google + n8n](docs/bonus-google.md)**. O artefato está em **[workflows/n8n-consulta-google.json](workflows/n8n-consulta-google.json)**. Os detalhes da publicação estão em **[deploy](docs/deploy.md)**.
+```bash
+curl -X POST https://portfolio.ecommjet.com.br/consultas \
+  -H 'Content-Type: application/json' \
+  -H 'X-API-Key: API_KEY_FORNECIDA_PRIVADAMENTE' \
+  -d '{"termo":"NOME, CPF OU NIS AUTORIZADO","beneficiario_programa_social":false}' \
+  --output resultado.json
+```
+
+Também é possível abrir o [Swagger](https://portfolio.ecommjet.com.br/docs), clicar em **Authorize**, informar a chave e executar `POST /consultas`.
+
+### 2. Executar o robô localmente
+
+Execute diretamente pela CLI. Este é o teste mais claro da Parte 1 porque mostra o Python controlando o portal sem depender da interface opcional:
+
+```bash
+source .venv/bin/activate
+export PLAYWRIGHT_BROWSERS_PATH="$PWD/.browsers"
+python -m app.cli 'NOME, CPF OU NIS AUTORIZADO' \
+  --output outputs/consulta.json
+```
+
+Acrescente `--social` para marcar o filtro **Beneficiário de programa social**. Saída 0 representa sucesso; saída 2 representa erro ou resultado parcial. Confira `status`, `codigo`, `pessoa`, `beneficios` e `evidencia.base64` em `outputs/consulta.json`.
+
+### 3. Rodar os testes automatizados
+
+```bash
+source .venv/bin/activate
+export PLAYWRIGHT_BROWSERS_PATH="$PWD/.browsers"
+python -m pytest -q
+node scripts/verify_workflow.cjs
+```
+
+A suíte cobre os cinco cenários do enunciado, os três benefícios, screenshot Base64, paginação, CAPTCHA, API, Google com serviços simulados e isolamento de consultas simultâneas. Última execução: **36 testes aprovados**.
+
+### 4. Conferir concorrência
+
+```bash
+python -m pytest -q tests/test_robot.py::test_concurrent_contexts_and_ids_are_isolated
+```
+
+O teste cria duas consultas concorrentes, contextos de navegador separados e UUIDs independentes. Em produção, `MAX_CONCURRENT=1` foi escolhido por limite de memória da VPS; a capacidade de concorrência pode ser aumentada por configuração.
+
+### Interface opcional
+
+A página em [portfolio.ecommjet.com.br](https://portfolio.ecommjet.com.br) é somente uma comodidade para acionar a mesma API, visualizar a captura e baixar o JSON. Ela não é requisito e não precisa ser usada na avaliação do robô.
+
+O tutorial completo de teste, bônus e envio está em **[docs/tutorial-entrega.md](docs/tutorial-entrega.md)**.
 
 ## Executar localmente
 
@@ -53,7 +119,7 @@ uvicorn app.api:app --host 127.0.0.1 --port 8000
 
 No Linux, instale as dependências de sistema com `python -m playwright install --with-deps chromium`. Execute os comandos a partir da raiz do projeto. A variável `PLAYWRIGHT_BROWSERS_PATH` precisa ser exportada para o processo do Playwright; apenas escrevê-la no `.env` não configura o driver.
 
-Abra [a interface](http://127.0.0.1:8000) ou [Swagger](http://127.0.0.1:8000/docs). O contrato JSON também está em `/openapi.json` e a verificação de processo em `/health` (não testa a disponibilidade do portal).
+Abra o [Swagger](http://127.0.0.1:8000/docs). O contrato JSON também está em `/openapi.json` e a verificação de processo em `/health` (não testa a disponibilidade do portal). A interface opcional fica em `/`.
 
 ```bash
 curl -X POST http://127.0.0.1:8000/consultas \
@@ -130,7 +196,7 @@ Também testam WAF com página vazia, a interface desktop/mobile, download, expo
 
 Uma consulta real assistida, autorizada pelo titular, permitiu abrir o panorama e os detalhes de Auxílio Emergencial. A extração das capturas locais gerou `outputs/resultado-assistido.json`, com uma tabela de nove registros e a imagem do panorama. Esse resultado declara `modo_execucao=assistido` e `status=parcial`: não comprova execução autônoma nem valida todos os programas e a paginação. As capturas e os dados pessoais ficam em `outputs/`, excluído do versionamento.
 
-Última execução local: **36 testes passaram em 13,00 segundos**, incluindo regressões do layout observado no portal e a estrutura real do controle de paginação.
+Última execução local: **36 testes passaram**, incluindo regressões do layout observado no portal e a estrutura real do controle de paginação.
 
 Para verificar a estrutura e os scripts do workflow n8n (requer Node.js):
 
@@ -161,6 +227,24 @@ Esse é um diagnóstico **assistido**. Se necessário, faça a verificação hum
 3. Usar um registro que tenha cada um dos três programas e comparar todos os detalhes e a paginação com a navegação manual.
 4. Repetir os cinco cenários do enunciado e duas consultas simultâneas, verificando também o JSON e a imagem.
 5. Se houver CAPTCHA, registrar `PORTAL_BLOQUEADO`; isso é um impedimento externo e não comprova sucesso funcional.
+
+## Bônus: n8n, Drive e Sheets
+
+O workflow **Observa | RPA → Google Drive + Sheets** está importado no n8n self-hosted e já chamou a API online com Header Auth. Ele recebe o JSON do robô e chama `/integracoes/google/arquivar`, que cria o arquivo `CONSULTA_ID_DATA_HORA.json` no Drive e registra consulta, nome, CPF, data/hora e link no Sheets.
+
+O código de Drive/Sheets, OAuth, retomada, checksum e prevenção de duplicações está implementado e testado. O teste real na conta Google ainda depende de uma ação do titular: criar um cliente OAuth Desktop e autorizar a conta. As instruções completas estão em **[docs/bonus-google.md](docs/bonus-google.md)**. Até essa autorização, a Parte 2 deve ser descrita como implementada, mas parcialmente homologada.
+
+## Como entregar
+
+O enunciado pede o envio para `rh@most.com.br` com o código-fonte e um breve relatório. Envie:
+
+1. Link deste repositório público.
+2. Link da API e do Swagger.
+3. Uma chave temporária da API, enviada somente no e-mail.
+4. Resumo das decisões técnicas e da limitação externa do AWS WAF.
+5. Situação honesta do bônus: n8n/API validados; OAuth real do Google pendente enquanto não for autorizado.
+
+Há um texto de e-mail pronto e um roteiro de apresentação em **[docs/tutorial-entrega.md](docs/tutorial-entrega.md)**. Antes do envio, autorize o Google, rode o workflow uma vez e substitua a situação do bônus por “homologado de ponta a ponta”.
 
 ## Organização e decisões
 
