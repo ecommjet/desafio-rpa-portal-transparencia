@@ -1,111 +1,26 @@
 {
-  "name": "Observa | RPA → Google Drive + Sheets",
+  "name": "RPA Portal da Transparência | Drive + Sheets",
   "active": false,
   "nodes": [
-    {
-      "id": "readme",
-      "name": "Configuração",
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [200, -220],
-      "parameters": {
-        "content": "## Observa — configuração\n1. Edite Entrada: URL da API e termo.\n2. Nos dois HTTP Request, selecione uma credencial Header Auth: X-API-Key.\n3. Configure OAuth/Drive/Sheets no servidor (docs/bonus-google.md).\n4. Execute o fluxo. A etapa Google chama o exportador Python, que usa as APIs oficiais e retoma uploads.\n\nO status da coleta e o status do arquivamento são separados. CAPTCHA arquivado continua sendo erro de coleta. Não reexecute a consulta para repetir somente o upload.",
-        "height": 280,
-        "width": 720
-      }
-    },
-    {
-      "id": "manual",
-      "name": "Executar consulta",
-      "type": "n8n-nodes-base.manualTrigger",
-      "typeVersion": 1,
-      "position": [0, 140],
-      "parameters": {}
-    },
-    {
-      "id": "input",
-      "name": "Entrada",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [220, 140],
-      "parameters": {
-        "jsCode": "return [{ json: { api_url: 'https://portfolio.ecommjet.com.br', termo: 'TESTE INEXISTENTE MOSTQI XYZ', beneficiario_programa_social: false } }];"
-      }
-    },
-    {
-      "id": "robot",
-      "name": "Consultar RPA",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [440, 140],
-      "parameters": {
-        "method": "POST",
-        "url": "={{ $json.api_url }}/consultas",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ { termo: $json.termo, beneficiario_programa_social: $json.beneficiario_programa_social } }}",
-        "options": {
-          "timeout": 180000,
-          "redirect": { "redirect": { "followRedirects": false } },
-          "response": { "response": { "neverError": true, "responseFormat": "json" } }
-        }
-      }
-    },
-    {
-      "id": "validate",
-      "name": "Validar resultado",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [660, 140],
-      "parameters": {
-        "jsCode": "const result = $input.first().json;\nif (!result.consulta_id || !result.consultado_em || !['sucesso', 'parcial', 'erro'].includes(result.status)) {\n  throw new Error('A API não devolveu uma consulta válida. Confira URL, autenticação e entrada.');\n}\nreturn [{ json: result }];"
-      }
-    },
-    {
-      "id": "archive",
-      "name": "Arquivar no Drive e Sheets",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [880, 140],
-      "retryOnFail": true,
-      "maxTries": 3,
-      "waitBetweenTries": 5000,
-      "parameters": {
-        "method": "POST",
-        "url": "={{ $node[\"Entrada\"].json.api_url }}/integracoes/google/arquivar",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ $json }}",
-        "options": {
-          "timeout": 300000,
-          "redirect": { "redirect": { "followRedirects": false } },
-          "response": { "response": { "responseFormat": "json" } }
-        }
-      }
-    },
-    {
-      "id": "receipt",
-      "name": "Recibo da execução",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [1100, 140],
-      "parameters": {
-        "jsCode": "const result = $('Validar resultado').first().json;\nreturn [{ json: { status_coleta: result.status, codigo_coleta: result.codigo, status_arquivamento: 'concluido', ...$input.first().json } }];"
-      }
-    }
+    {"id":"manual","name":"Executar consulta","type":"n8n-nodes-base.manualTrigger","typeVersion":1,"position":[0,160],"parameters":{}},
+    {"id":"input","name":"Entrada","type":"n8n-nodes-base.code","typeVersion":2,"position":[220,160],"parameters":{"jsCode":"return [{ json: { api_url: 'https://portfolio.ecommjet.com.br', termo: 'TESTE INEXISTENTE MOSTQI XYZ', beneficiario_programa_social: false } }];"}},
+    {"id":"robot","name":"Consultar RPA","type":"n8n-nodes-base.httpRequest","typeVersion":4.2,"position":[440,160],"parameters":{"method":"POST","url":"={{ $json.api_url }}/consultas","authentication":"genericCredentialType","genericAuthType":"httpHeaderAuth","sendBody":true,"specifyBody":"json","jsonBody":"={{ { termo: $json.termo, beneficiario_programa_social: $json.beneficiario_programa_social } }}","options":{"timeout":180000,"redirect":{"redirect":{"followRedirects":false}},"response":{"response":{"neverError":true,"responseFormat":"json"}}}}},
+    {"id":"validate","name":"Validar resultado","type":"n8n-nodes-base.code","typeVersion":2,"position":[660,160],"parameters":{"jsCode":"const result = $input.first().json;\nif (!result.consulta_id || !result.consultado_em || !['sucesso', 'parcial', 'erro'].includes(result.status)) {\n  throw new Error('A API não devolveu uma consulta válida. Confira URL, autenticação e entrada.');\n}\nreturn [{ json: result }];"}},
+    {"id":"binary","name":"Preparar arquivo JSON","type":"n8n-nodes-base.code","typeVersion":2,"position":[880,160],"parameters":{"jsCode":"const result = $input.first().json;\nconst stamp = result.consultado_em.replace(/[-:.]/g, '').replace('+00:00', 'Z');\nconst fileName = `${result.consulta_id}_${stamp}.json`;\nconst data = Buffer.from(JSON.stringify(result, null, 2), 'utf8').toString('base64');\nreturn [{ json: { consulta_id: result.consulta_id }, binary: { data: { data, mimeType: 'application/json', fileName, fileExtension: 'json' } } }];"}},
+    {"id":"drive","name":"Salvar JSON no Drive","type":"n8n-nodes-base.googleDrive","typeVersion":3,"position":[1100,160],"parameters":{"resource":"file","operation":"upload","inputDataFieldName":"data","name":"={{ $binary.data.fileName }}","driveId":{"__rl":true,"mode":"list","value":"My Drive","cachedResultName":"My Drive"},"folderId":{"__rl":true,"mode":"id","value":"1wU3q8mzZbRbWpQFvzZFEd9pSHIwcSXGX"},"options":{"simplifyOutput":true}}},
+    {"id":"row","name":"Preparar registro","type":"n8n-nodes-base.code","typeVersion":2,"position":[1320,160],"parameters":{"jsCode":"const result = $('Validar resultado').first().json;\nconst file = $input.first().json;\nreturn [{ json: {\n  consulta_id: result.consulta_id,\n  nome: result.pessoa?.nome || '',\n  cpf: result.pessoa?.cpf || '',\n  consultado_em: result.consultado_em,\n  arquivo_json: `https://drive.google.com/file/d/${file.id}/view`,\n  status: result.status,\n  codigo: result.codigo || ''\n} }];"}},
+    {"id":"sheets","name":"Registrar no Google Sheets","type":"n8n-nodes-base.googleSheets","typeVersion":4.7,"position":[1540,160],"parameters":{"operation":"append","documentId":{"__rl":true,"mode":"id","value":"1IWxmNkOu7OIaSI6MTR86kGmI7lfdeapt1CTbeDNG36E"},"sheetName":{"__rl":true,"mode":"list","value":"gid=0","cachedResultName":"Página1","cachedResultUrl":"https://docs.google.com/spreadsheets/d/1IWxmNkOu7OIaSI6MTR86kGmI7lfdeapt1CTbeDNG36E/edit#gid=0"},"columns":{"mappingMode":"autoMapInputData","value":{},"matchingColumns":[],"schema":[{"id":"consulta_id","displayName":"consulta_id","required":false,"defaultMatch":false,"display":true,"type":"string","canBeUsedToMatch":true,"removed":false},{"id":"nome","displayName":"nome","required":false,"defaultMatch":false,"display":true,"type":"string","canBeUsedToMatch":true,"removed":false},{"id":"cpf","displayName":"cpf","required":false,"defaultMatch":false,"display":true,"type":"string","canBeUsedToMatch":true,"removed":false},{"id":"consultado_em","displayName":"consultado_em","required":false,"defaultMatch":false,"display":true,"type":"string","canBeUsedToMatch":true,"removed":false},{"id":"arquivo_json","displayName":"arquivo_json","required":false,"defaultMatch":false,"display":true,"type":"string","canBeUsedToMatch":true,"removed":false},{"id":"status","displayName":"status","required":false,"defaultMatch":false,"display":true,"type":"string","canBeUsedToMatch":true,"removed":false},{"id":"codigo","displayName":"codigo","required":false,"defaultMatch":false,"display":true,"type":"string","canBeUsedToMatch":true,"removed":false}],"attemptToConvertTypes":false,"convertFieldsToString":false},"options":{"cellFormat":"RAW"}}},
+    {"id":"receipt","name":"Recibo da execução","type":"n8n-nodes-base.code","typeVersion":2,"position":[1760,160],"parameters":{"jsCode":"const result = $('Validar resultado').first().json;\nconst file = $('Salvar JSON no Drive').first().json;\nreturn [{ json: {\n  consulta_id: result.consulta_id,\n  status_coleta: result.status,\n  codigo_coleta: result.codigo || null,\n  status_arquivamento: 'concluido',\n  arquivo_id: file.id,\n  arquivo_nome: file.name,\n  arquivo_url: `https://drive.google.com/file/d/${file.id}/view`,\n  planilha_url: 'https://docs.google.com/spreadsheets/d/1IWxmNkOu7OIaSI6MTR86kGmI7lfdeapt1CTbeDNG36E/edit'\n} }];"}}
   ],
   "connections": {
-    "Executar consulta": { "main": [[{ "node": "Entrada", "type": "main", "index": 0 }]] },
-    "Entrada": { "main": [[{ "node": "Consultar RPA", "type": "main", "index": 0 }]] },
-    "Consultar RPA": { "main": [[{ "node": "Validar resultado", "type": "main", "index": 0 }]] },
-    "Validar resultado": { "main": [[{ "node": "Arquivar no Drive e Sheets", "type": "main", "index": 0 }]] },
-    "Arquivar no Drive e Sheets": { "main": [[{ "node": "Recibo da execução", "type": "main", "index": 0 }]] }
+    "Executar consulta":{"main":[[{"node":"Entrada","type":"main","index":0}]]},
+    "Entrada":{"main":[[{"node":"Consultar RPA","type":"main","index":0}]]},
+    "Consultar RPA":{"main":[[{"node":"Validar resultado","type":"main","index":0}]]},
+    "Validar resultado":{"main":[[{"node":"Preparar arquivo JSON","type":"main","index":0}]]},
+    "Preparar arquivo JSON":{"main":[[{"node":"Salvar JSON no Drive","type":"main","index":0}]]},
+    "Salvar JSON no Drive":{"main":[[{"node":"Preparar registro","type":"main","index":0}]]},
+    "Preparar registro":{"main":[[{"node":"Registrar no Google Sheets","type":"main","index":0}]]},
+    "Registrar no Google Sheets":{"main":[[{"node":"Recibo da execução","type":"main","index":0}]]}
   },
-  "settings": { "executionOrder": "v1" },
-  "pinData": {},
-  "tags": []
+  "settings":{"executionOrder":"v1"},"pinData":{},"tags":[]
 }

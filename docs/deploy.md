@@ -1,59 +1,28 @@
-# Publicar a API para avaliação
+# Implantação
 
-O requisito do bônus inclui uma API online. O deploy está ativo em **[portfolio.ecommjet.com.br](https://portfolio.ecommjet.com.br)**, via Docker/Easypanel na mesma VPS do n8n self-hosted.
+A API é executada em contêiner Docker na VPS e publicada por HTTPS em `portfolio.ecommjet.com.br`. O manifesto [compose.easypanel.yaml](../compose.easypanel.yaml) define health check, reinício automático, limite de logs, volume persistente e `shm_size` para o Chromium.
 
-O serviço `portfolio_observa_api` roda isolado, com `REQUIRE_API_KEY=true`, `MAX_CONCURRENT=1`, volume persistente e health check. O Caddy já existente na VPS termina o HTTPS e encaminha somente esse domínio ao container na rede `easypanel`; as rotas do n8n e da Evolution API não foram alteradas. `/health`, `/docs` e a resposta 401 de uma consulta sem chave foram verificados externamente.
+## Variáveis de produção
 
-## VPS com n8n self-hosted (destino escolhido)
-
-1. Transfira o código para uma pasta dedicada na VPS, sem sobrescrever a instalação do n8n.
-2. Crie um arquivo `.env` privado nessa pasta com `API_KEY`, os IDs do Google e `GOOGLE_TOKEN_JSON` em uma única linha. Preserve permissões restritas. Não coloque esse arquivo no Git.
-3. Execute `docker compose -f compose.vps.yaml up -d --build`.
-4. Verifique `curl http://127.0.0.1:8001/health` e os logs com `docker compose -f compose.vps.yaml logs --tail=100 api`.
-5. Configure seu proxy HTTPS existente para encaminhar o subdomínio escolhido à API. Se o proxy roda no host, o destino é `127.0.0.1:8001`. Se roda em container, conecte-o à rede apropriada e use o nome do serviço, não o localhost do container.
-6. No n8n, configure a URL HTTPS pública e a credencial Header Auth da API. Teste a partir da própria execução n8n.
-
-O compose publica somente em loopback, exige chave e persiste o estado em volume. Não ocupa as portas 80/443 e não altera o n8n. A porta local pode ser alterada com `OBSERVA_HOST_PORT`. Ajuste `MAX_CONCURRENT` aos recursos da VPS após medir o consumo do Chromium.
-
-Se o n8n estiver em Docker na **mesma VPS**, você pode usar uma rede compartilhada existente:
-
-```bash
-# Substitua pelo nome real da rede do seu n8n:
-export N8N_DOCKER_NETWORK=nome_da_rede
-docker compose -f compose.vps.yaml -f compose.n8n-network.yaml up -d --build
+```dotenv
+HEADLESS=true
+REQUIRE_API_KEY=true
+API_KEY=<segredo>
+MAX_CONCURRENT=1
+QUERY_TIMEOUT_SECONDS=120
 ```
 
-Nesse caso, o nó Entrada pode usar `http://observa-api:8000`. O endpoint HTTPS continua necessário para o acesso dos avaliadores fora da VPS. Não aplique o override sem conferir a rede existente. O deployment ainda depende do acesso autorizado à VPS e dos dados do proxy/domínio.
+O proxy do Easypanel encaminha o domínio para a porta 8000 do contêiner. A porta não precisa ser exposta diretamente pela VPS.
 
-## Render (alternativa, não utilizada)
+## Verificação
 
-1. Publique o código em um repositório seu, sem `.env`, `secrets/`, `outputs/`, `.venv/` ou `.browsers/`.
-2. Na sua conta Render, crie um Blueprint a partir do repositório. O arquivo `render.yaml` descreve o serviço Docker e uma chave de API gerada.
-3. Configure `GOOGLE_DRIVE_FOLDER_ID` e `GOOGLE_SPREADSHEET_ID` com os IDs criados no setup local.
-4. Configure **GOOGLE_TOKEN_JSON como segredo** com o conteúdo de `secrets/google-token.json`. Faça isso diretamente no painel, sem colocar o token no repositório.
-5. Após o build, abra `/health`, a interface `/` e `/docs` na URL HTTPS fornecida.
-6. Informe a chave da API na interface e configure a mesma URL/credencial no n8n.
+```bash
+curl https://portfolio.ecommjet.com.br/health
+curl -I https://portfolio.ecommjet.com.br/docs
+```
 
-O blueprint usa o plano gratuito e concorrência 1 como ponto de partida. Chromium pode exceder os recursos disponíveis, e inicialização a frio pode ultrapassar o timeout do workflow. Teste a carga antes da apresentação e aqueça `/health` antes de executar a consulta. Não foi validado o consumo de memória nesse provedor. Confira as condições atuais no painel antes de contratar qualquer recurso.
+Os endpoints protegidos respondem 401 sem `X-API-Key`. O health check confirma o processo da API; a disponibilidade do portal externo é avaliada durante cada consulta.
 
-O disco desse plano não é persistente. Para maior confiabilidade, use armazenamento persistente para `EXPORT_STATE_DIR` em uma implantação apropriada e mantenha uma única instância. O exportador pode recuperar arquivos via Drive, mas não substitui uma fila durável nem uma transação distribuída. Referência: [blueprints Render](https://render.com/docs/blueprint-spec).
+## Atualização
 
-## Docker em servidor próprio
-
-`docker compose up --build` publica a API em localhost e persiste checkpoints em um volume. Para o Google, configure os IDs e `GOOGLE_TOKEN_JSON` como variáveis protegidas no servidor. Use um proxy HTTPS para acesso externo, com `API_KEY` forte e `REQUIRE_API_KEY=true`. Não exponha o n8n ou o token Google sem autenticação.
-
-O container executa com usuário sem privilégios. O Dockerfile instala Chromium e suas bibliotecas Linux. O build e a execução foram validados na VPS.
-
-## Checklist de aceite online
-
-- [x] `/health` responde e `/docs` carrega por HTTPS.
-- [x] POST sem chave recebe 401.
-- [ ] Consulta real autorizada produz panorama, benefícios e evidência verificáveis.
-- [x] Bloqueio do portal é reportado como erro, com diagnóstico.
-- [ ] Duas consultas simultâneas têm UUIDs/resultados independentes (ajustar recursos e concorrência).
-- [x] n8n executa a consulta autenticada e recebe o JSON do robô.
-- [ ] n8n recebe os links do Google após a autorização OAuth.
-- [ ] JSON no Drive contém a imagem e os mesmos dados retornados pela API.
-- [ ] Reenviar o mesmo JSON não duplica o arquivo ou a linha.
-
-A API já pode ser apresentada para avaliação do contrato e do tratamento de erros. Uma coleta headless bem-sucedida no portal e o arquivamento Google real dependem, respectivamente, da liberação do WAF e da autorização OAuth.
+O serviço é construído a partir do repositório Git. Uma nova implantação recompila a imagem, instala o Chromium e substitui somente o contêiner da API. O n8n, o banco e os demais serviços da VPS não fazem parte desse compose.
