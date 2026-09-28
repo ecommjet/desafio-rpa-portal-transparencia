@@ -1,6 +1,6 @@
 # Implantação
 
-A API é executada em contêiner Docker na VPS e publicada por HTTPS em `portfolio.ecommjet.com.br`. O manifesto [compose.easypanel.yaml](../compose.easypanel.yaml) define health check, reinício automático, limite de logs, volume persistente e `shm_size` para o Chromium.
+A API é executada em contêiner Docker na VPS e publicada por HTTPS em `python-rpa-9f3d.72-60-12-215.sslip.io`. O manifesto [compose.easypanel.yaml](../compose.easypanel.yaml) define health check, reinício automático, limite de logs, volume persistente e `shm_size` para o Chromium.
 
 ## Variáveis de produção
 
@@ -17,8 +17,8 @@ O proxy do Easypanel encaminha o domínio para a porta 8000 do contêiner. A por
 ## Verificação
 
 ```bash
-curl https://portfolio.ecommjet.com.br/health
-curl -I https://portfolio.ecommjet.com.br/docs
+curl https://python-rpa-9f3d.72-60-12-215.sslip.io/health
+curl -I https://python-rpa-9f3d.72-60-12-215.sslip.io/docs
 ```
 
 Os endpoints protegidos respondem 401 sem `X-API-Key`. O health check confirma o processo da API; a disponibilidade do portal externo é avaliada durante cada consulta.

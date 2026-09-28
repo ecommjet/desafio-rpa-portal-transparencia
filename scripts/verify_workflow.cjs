@@ -11,8 +11,11 @@ const run = (name, input, reference = {}) => new Function('$input', '$', 'Buffer
   { first: () => ({ json: input }) }, () => ({ first: () => ({ json: reference }) }), Buffer,
 );
 const input = run('Entrada')[0].json;
-assert.equal(input.api_url, 'https://portfolio.ecommjet.com.br');
+assert.equal(input.api_url, 'https://python-rpa-9f3d.72-60-12-215.sslip.io');
 assert.equal(typeof input.beneficiario_programa_social, 'boolean');
+assert.equal(nodes.get('1. Configurar armazenamento').type, 'n8n-nodes-base.manualTrigger');
+assert.equal(nodes.get('2. Receber consulta').type, 'n8n-nodes-base.webhook');
+assert.equal(nodes.get('2. Receber consulta').parameters.path, 'consulta-portal-transparencia');
 const result = { consulta_id: 'example-id', consultado_em: '2026-09-27T20:00:00Z', status: 'erro', codigo: 'PORTAL_BLOQUEADO' };
 assert.deepEqual(run('Validar resultado', result)[0].json, result);
 assert.throws(() => run('Validar resultado', { detail: 'Unauthorized' }));

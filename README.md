@@ -12,15 +12,15 @@ Solução do [desafio full stack Python — desafio 01](https://github.com/mostq
 | Evidência | Screenshot PNG codificado em Base64 dentro do JSON |
 | API | FastAPI, OpenAPI/Swagger, autenticação por `X-API-Key` e HTTPS |
 | Hiperautomação | n8n com nós oficiais Google Drive e Google Sheets |
-| Implantação | Docker em VPS, disponível em `portfolio.ecommjet.com.br` |
+| Implantação | Docker em VPS, disponível por HTTPS em domínio neutro |
 | Testes | 36 testes automatizados e validação estrutural do workflow n8n |
 
 Links da aplicação:
 
-- API: [https://portfolio.ecommjet.com.br](https://portfolio.ecommjet.com.br)
-- Swagger: [https://portfolio.ecommjet.com.br/docs](https://portfolio.ecommjet.com.br/docs)
-- OpenAPI: [https://portfolio.ecommjet.com.br/openapi.json](https://portfolio.ecommjet.com.br/openapi.json)
-- Health check: [https://portfolio.ecommjet.com.br/health](https://portfolio.ecommjet.com.br/health)
+- API: [https://python-rpa-9f3d.72-60-12-215.sslip.io](https://python-rpa-9f3d.72-60-12-215.sslip.io)
+- Swagger: [https://python-rpa-9f3d.72-60-12-215.sslip.io/docs](https://python-rpa-9f3d.72-60-12-215.sslip.io/docs)
+- OpenAPI: [https://python-rpa-9f3d.72-60-12-215.sslip.io/openapi.json](https://python-rpa-9f3d.72-60-12-215.sslip.io/openapi.json)
+- Health check: [https://python-rpa-9f3d.72-60-12-215.sslip.io/health](https://python-rpa-9f3d.72-60-12-215.sslip.io/health)
 
 Os endpoints de consulta exigem uma chave no cabeçalho `X-API-Key`. A chave de avaliação é compartilhada separadamente e não fica no repositório.
 
@@ -129,7 +129,7 @@ Os seletores e a extração foram validados no layout real em sessão autorizada
 O arquivo [workflows/n8n-consulta-google.json](workflows/n8n-consulta-google.json) contém o workflow completo:
 
 1. o gatilho **1. Configurar armazenamento** cria a pasta, a planilha e suas colunas na conta Google conectada;
-2. o gatilho **2. Executar consulta** recebe os parâmetros e localiza esses recursos pelo nome;
+2. o webhook **2. Receber consulta** recebe `termo` e `beneficiario_programa_social` e localiza esses recursos pelo nome;
 3. chama `POST /consultas` com `X-API-Key`;
 4. valida o contrato retornado;
 5. converte o resultado integral em um arquivo JSON;
@@ -137,7 +137,7 @@ O arquivo [workflows/n8n-consulta-google.json](workflows/n8n-consulta-google.jso
 7. registra `consulta_id`, nome, CPF, data/hora, link do JSON, status e código no nó oficial **Google Sheets**;
 8. devolve um recibo com os links do arquivo e da planilha.
 
-O primeiro gatilho é executado uma vez após a importação; o segundo inicia cada consulta. Nenhum ID de pasta ou planilha é versionado. O nome do arquivo segue o padrão `CONSULTA_ID_DATA_HORA.json`. As credenciais OAuth ficam no cofre de credenciais do n8n e não são exportadas no workflow. O arquivo do Drive permanece privado na conta Google; o fluxo não cria compartilhamento público.
+O primeiro gatilho é executado uma vez após a importação. Depois de ativado, o workflow executa automaticamente a cada `POST` recebido no webhook. Nenhum ID de pasta ou planilha é versionado. O nome do arquivo segue o padrão `CONSULTA_ID_DATA_HORA.json`. As credenciais OAuth ficam no cofre de credenciais do n8n e não são exportadas no workflow. O arquivo do Drive permanece privado na conta Google; o fluxo não cria compartilhamento público.
 
 Detalhes da integração estão em [docs/bonus-google.md](docs/bonus-google.md).
 
