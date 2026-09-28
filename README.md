@@ -128,15 +128,16 @@ Os seletores e a extração foram validados no layout real em sessão autorizada
 
 O arquivo [workflows/n8n-consulta-google.json](workflows/n8n-consulta-google.json) contém o workflow completo:
 
-1. recebe os parâmetros da consulta;
-2. chama `POST /consultas` com `X-API-Key`;
-3. valida o contrato retornado;
-4. converte o resultado integral em um arquivo JSON;
-5. envia o arquivo para uma pasta do Google Drive com o nó oficial **Google Drive**;
-6. registra `consulta_id`, nome, CPF, data/hora, link do JSON, status e código no nó oficial **Google Sheets**;
-7. devolve um recibo com os links do arquivo e da planilha.
+1. o gatilho **1. Configurar armazenamento** cria a pasta, a planilha e suas colunas na conta Google conectada;
+2. o gatilho **2. Executar consulta** recebe os parâmetros e localiza esses recursos pelo nome;
+3. chama `POST /consultas` com `X-API-Key`;
+4. valida o contrato retornado;
+5. converte o resultado integral em um arquivo JSON;
+6. envia o arquivo para a pasta criada com o nó oficial **Google Drive**;
+7. registra `consulta_id`, nome, CPF, data/hora, link do JSON, status e código no nó oficial **Google Sheets**;
+8. devolve um recibo com os links do arquivo e da planilha.
 
-O nome do arquivo segue o padrão `CONSULTA_ID_DATA_HORA.json`. As credenciais OAuth ficam no cofre de credenciais do n8n e não são exportadas no workflow. O arquivo do Drive permanece privado na conta Google; o fluxo não cria compartilhamento público.
+O primeiro gatilho é executado uma vez após a importação; o segundo inicia cada consulta. Nenhum ID de pasta ou planilha é versionado. O nome do arquivo segue o padrão `CONSULTA_ID_DATA_HORA.json`. As credenciais OAuth ficam no cofre de credenciais do n8n e não são exportadas no workflow. O arquivo do Drive permanece privado na conta Google; o fluxo não cria compartilhamento público.
 
 Detalhes da integração estão em [docs/bonus-google.md](docs/bonus-google.md).
 

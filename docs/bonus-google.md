@@ -6,7 +6,12 @@ O bônus é implementado pelo workflow [n8n-consulta-google.json](../workflows/n
 
 | Nó | Responsabilidade |
 |---|---|
-| Executar consulta | gatilho manual para execução e avaliação |
+| 1. Configurar armazenamento | gatilho executado uma vez para preparar a conta Google |
+| Criar pasta de consultas | cria a pasta que receberá os arquivos JSON |
+| Criar planilha de registro | cria a planilha e a aba `consultas` |
+| Inicializar colunas | cria as sete colunas do registro central |
+| 2. Executar consulta | gatilho usado para iniciar cada consulta |
+| Localizar pasta / planilha | encontra os recursos pelo nome, sem IDs fixos no workflow |
 | Entrada | URL da API, termo e filtro social |
 | Consultar RPA | chamada autenticada a `POST /consultas` |
 | Validar resultado | valida UUID, data/hora e status |
